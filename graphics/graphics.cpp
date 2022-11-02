@@ -108,4 +108,15 @@ void FreeAllResources() {
   ResourceManager::GetInstance().FreeAllResources();
 }
 
+const SDL_Rect* MakeRect(int x, int y, int w, int h) {
+  static SDL_Rect r[8];
+  static int i = -1;
+  i = (i + 1) % std::size(r);
+  r[i].x = x;
+  r[i].y = y;
+  r[i].w = w;
+  r[i].h = h;
+  return &r[i];
+}
+
 }  // namespace render

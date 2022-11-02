@@ -29,7 +29,7 @@ class EmptyCell : public Cell {
   void Render(int x, int y) override {
     SDL_SetRenderDrawColor(render::GetRenderer(), 255, 255, 255, 255);
     SDL_RenderDrawRect(render::GetRenderer(),
-                       &SDL_Rect{x * 32, y * 32, 32, 32});
+                       render::MakeRect(x * 32, y * 32, 32, 32));
   }
 };
 
@@ -38,7 +38,7 @@ class AppleCell : public Cell {
   void Render(int x, int y) {
     SDL_SetRenderDrawColor(render::GetRenderer(), 255, 255, 255, 255);
     SDL_RenderDrawRect(render::GetRenderer(),
-                       &SDL_Rect{x * 32, y * 32, 32, 32});
+                       render::MakeRect(x * 32, y * 32, 32, 32));
 
     render::DrawImage("apple.png", x * 32, y * 32,  32, 32);
   }
@@ -160,7 +160,7 @@ class Snake {
     for (const Coords& u : units) {
       SDL_SetRenderDrawColor(render::GetRenderer(), 255, 191, 0, 0);
       SDL_RenderFillRect(render::GetRenderer(),
-                         &SDL_Rect{u.x * 32 + 3, u.y * 32 + 3, 26, 26});
+                         render::MakeRect(u.x * 32 + 3, u.y * 32 + 3, 26, 26));
     }
   }
 

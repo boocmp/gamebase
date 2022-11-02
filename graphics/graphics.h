@@ -29,4 +29,6 @@ void FreeAllResources();
 
 void DrawImage(const std::string& name, int x, int y, int w = 0, int h = 0);
 
+const SDL_Rect* MakeRect(int x, int y, int w, int h);
+
 }  // namespace render

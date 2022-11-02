@@ -29,12 +29,12 @@ class GameApp : public app::GameApp {
   }
 
   void Initialize() override {
-    render::LoadResource("resources/images/apple.png");
+    //render::LoadResource("resources/images/apple.png");
 
     AddApple();
   }
 
-  void ProcessInput(const Uint8* keyboard) {
+  void ProcessInput(const Uint8* keyboard) override {
     if (keyboard[SDL_SCANCODE_RIGHT]) {
       snake.SetDirection(RIGHT);
     } else if (keyboard[SDL_SCANCODE_LEFT]) {
@@ -91,6 +91,10 @@ class GameApp : public app::GameApp {
 
 #undef main
 int main() {
-  GameApp(800, 800).Run();
+  try {
+    GameApp(800, 800).Run();
+  } catch(std::exception& e) {
+    std::cout << e.what() << std::endl;
+  }
   return 0;
 }
