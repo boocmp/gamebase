@@ -29,7 +29,7 @@ class GameApp : public app::GameApp {
   }
 
   void Initialize() override {
-    //render::LoadResource("resources/images/apple.png");
+    render::LoadResource("resources/images/apple.png");
 
     AddApple();
   }
