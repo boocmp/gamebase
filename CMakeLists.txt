@@ -15,9 +15,18 @@ find_package (SDL2_IMAGE REQUIRED)
 
 # Include SDL2 support for cmake
 
-message(STATUS  ${SDL2_IMAGE_INCLUDE_DIR})
-message(STATUS  ${SDL2_INCLUDE_DIR})
-include_directories(${SDL2_INCLUDE_DIR})
+if (NOT DEFINED SDL2_INCLUDE_DIR)
+  if (DEFINED SDL2_INCLUDE_DIRS)
+    set(SDL2_INCLUDE_DIR ${SDL2_INCLUDE_DIRS})
+  endif()
+endif()
+if (NOT DEFINED SDL2_IMAGE_INCLUDE_DIR)
+  if (DEFINED SDL2_IMAGE_INCLUDE_DIRS)
+    set(SDL2_IMAGE_INCLUDE_DIR ${SDL2_IMAGE_INCLUDE_DIRS})
+   endif()
+endif()
+
+include_directories(${SDL2_INCLUDE_DIR} ${SDL2_IMAGE_INCLUDE_DIR})
 
 # Include header files
 include_directories (graphics)
@@ -33,9 +42,17 @@ set(SOURCES
    )
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+if (NOT DEFINED SDL2_LIBRARIES)
+  set(SDL2_LIBRARIES "SDL2::SDL2")
+endif()
+
+if (NOT DEFINED SDL2_IMAGE_LIBRARIES)
+  set(SDL2_IMAGE_LIBRARIES "SDL2_image::SDL2_image")
+endif()
+
 target_link_libraries(${PROJECT_NAME}
-   SDL2::SDL2
-   SDL2_image::SDL2_image
+   ${SDL2_LIBRARIES}
+   ${SDL2_IMAGE_LIBRARIES}
    )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
