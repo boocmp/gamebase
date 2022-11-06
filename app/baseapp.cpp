@@ -18,6 +18,11 @@ void GameApp::Run() {
         case SDL_QUIT:
           exit = true;
           break;
+        case SDL_WINDOWEVENT:
+          if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+            OnWindowResized(event.window.data1, event.window.data2);
+          }
+          break;
       }
     }
 
@@ -28,7 +33,9 @@ void GameApp::Run() {
       Update(delta_time);
     }
 
-    ProcessInput(SDL_GetKeyboardState(nullptr));
+    MouseState mouse;
+    mouse.buttons = SDL_GetMouseState(&mouse.x, &mouse.y);
+    ProcessInput(SDL_GetKeyboardState(nullptr), mouse);
 
     SDL_SetRenderDrawColor(render::GetRenderer(), 0, 0, 0, 255);
     SDL_RenderClear(render::GetRenderer());

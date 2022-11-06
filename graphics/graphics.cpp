@@ -26,8 +26,9 @@ RenderWindow::RenderWindow(int width, int height)
 
   SDL_Init(SDL_INIT_EVERYTHING);
 
-  sdl_window_ = SDL_CreateWindow("GAME", SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED, width_, height_, 0);
+  sdl_window_ =
+      SDL_CreateWindow("GAME", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                       width_, height_, SDL_WINDOW_RESIZABLE);
 
   sdl_renderer_ = SDL_CreateRenderer(sdl_window_, -1, SDL_RENDERER_ACCELERATED);
 }

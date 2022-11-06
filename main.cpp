@@ -34,7 +34,7 @@ class GameApp : public app::GameApp {
     AddApple();
   }
 
-  void ProcessInput(const Uint8* keyboard) override {
+  void ProcessInput(const Uint8* keyboard, const MouseState& mouse) override {
     if (keyboard[SDL_SCANCODE_RIGHT]) {
       snake.SetDirection(RIGHT);
     } else if (keyboard[SDL_SCANCODE_LEFT]) {
@@ -93,7 +93,7 @@ class GameApp : public app::GameApp {
 int main() {
   try {
     GameApp(800, 800).Run();
-  } catch(std::exception& e) {
+  } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
   return 0;
