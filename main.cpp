@@ -10,6 +10,8 @@ class Ferma : public app::GameApp {
     // Тут загружаем ресурсы: картинки и прочее
     render::LoadResource("resources/images/egg.png", "egg"); 
     render::LoadResource("resources/images/backdrop.png", "backdrop");
+    render::LoadResource("resources/images/duck.png", "duck");
+    
     render::LoadResource("resources/images/d_r1.png", "d_r1"); 
     render::LoadResource("resources/images/d_r2.png", "d_r2"); 
     render::LoadResource("resources/images/d_r3.png", "d_r3"); 
