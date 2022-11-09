@@ -105,6 +105,15 @@ void DrawImage(const std::string& name, int x, int y, int w, int h) {
   SDL_RenderCopy(GetRenderer(), texture, nullptr, &rect);
 }
 
+void DrawImageFromAtlas(const std::string& name, int x, int y , int w, int h, int atlas_x, int atlas_y, int atlas_w, int atlas_h) {
+  auto* texture = ResourceManager::GetInstance().GetTexture(name);
+  if (!texture)
+    throw std::invalid_argument("Texture " + name + " is not loaded.");
+
+  SDL_RenderCopy(GetRenderer(), texture, MakeRect(atlas_x, atlas_y, atlas_w, atlas_h), MakeRect(x, y, w, h));
+}
+
+
 void FreeAllResources() {
   ResourceManager::GetInstance().FreeAllResources();
 }

@@ -28,6 +28,7 @@ void LoadResource(const std::filesystem::path& path,
 void FreeAllResources();
 
 void DrawImage(const std::string& name, int x, int y, int w = 0, int h = 0);
+void DrawImageFromAtlas(const std::string& name, int x, int y, int w, int h, int atlas_x, int atlas_y, int atlas_w, int atlas_h);
 
 const SDL_Rect* MakeRect(int x, int y, int w, int h);
 
