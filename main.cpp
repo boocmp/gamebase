@@ -127,7 +127,7 @@ class Ferma : public app::GameApp {
     down = 0;
   }
 
-  void ProcessInput(const Uint8* keyboard) override {
+  void ProcessInput(const Uint8* keyboard, const MouseState& mouse) override {
     // тут анализируем состояние клавиш клавиатуры
     if (keyboard[SDL_SCANCODE_LEFT])
       {--x; left = 1;}
