@@ -1,12 +1,15 @@
 #include "graphics.h"
+#include "atlas.h"
 
 #include <SDL.h>
 #include <SDL_image.h>
 
 #include <exception>
 #include <filesystem>
+#include <iostream>
 #include <stdexcept>
 #include <unordered_map>
+
 
 namespace render {
 
@@ -66,10 +69,19 @@ class ResourceManager {
     textures_.clear();
   }
 
+  void AddAtlas(Atlas&& atlas) { atlases_[atlas.GetName()] = std::move(atlas); }
+
   SDL_Texture* GetTexture(const std::string& name) {
     auto fnd = textures_.find(name);
     if (fnd == textures_.end())
       return nullptr;
+    return fnd->second;
+  }
+
+  const Atlas& GetAtlas(const std::string& name) const {
+    auto fnd = atlases_.find(name);
+    if (fnd == atlases_.end())
+      throw std::invalid_argument(name + " doesn't exist");
     return fnd->second;
   }
 
@@ -82,21 +94,34 @@ class ResourceManager {
   ~ResourceManager() { FreeAllResources(); }
 
   std::unordered_map<std::string, SDL_Texture*> textures_;
+  std::unordered_map<std::string, Atlas> atlases_;
 };
 
-void LoadResource(const std::filesystem::path& path, const std::string& name) {
+std::string LoadResource(const std::filesystem::path& path,
+                         const std::string& name) {
   if (!name.empty()) {
     ResourceManager::GetInstance().LoadResource(path, name);
+    return name;
   } else {
     ResourceManager::GetInstance().LoadResource(path, path.filename().string());
+    return path.filename().string();
   }
 }
 
-void DrawImage(const std::string& name, int x, int y, int w, int h) {
+void BakeAtlas(Atlas& atlas) {
+  atlas.Bake();
+  ResourceManager::GetInstance().AddAtlas(std::move(atlas));
+}
+
+SDL_Texture* GetTexture(const std::string& name) {
   auto* texture = ResourceManager::GetInstance().GetTexture(name);
   if (!texture)
     throw std::invalid_argument("Texture " + name + " is not loaded.");
+  return texture;
+}
 
+void DrawImage(const std::string& name, int x, int y, int w, int h) {
+  auto* texture = GetTexture(name);
   SDL_Rect rect = {x, y, w, h};
   if (w == 0 || h == 0) {
     SDL_QueryTexture(texture, nullptr, nullptr, &rect.w, &rect.h);
@@ -105,14 +130,53 @@ void DrawImage(const std::string& name, int x, int y, int w, int h) {
   SDL_RenderCopy(GetRenderer(), texture, nullptr, &rect);
 }
 
-void DrawImageFromAtlas(const std::string& name, int x, int y , int w, int h, int atlas_x, int atlas_y, int atlas_w, int atlas_h) {
-  auto* texture = ResourceManager::GetInstance().GetTexture(name);
-  if (!texture)
-    throw std::invalid_argument("Texture " + name + " is not loaded.");
+void DrawImageFromAtlas(const std::string& name,
+                        const std::string& line,
+                        int frame,
+                        int x,
+                        int y,
+                        int w,
+                        int h) {
+  const auto& atlas = ResourceManager::GetInstance().GetAtlas(name);
+  const auto& al = atlas.GetAnimationLine(line);
+  auto* texture = GetTexture(atlas.GetName());
 
-  SDL_RenderCopy(GetRenderer(), texture, MakeRect(atlas_x, atlas_y, atlas_w, atlas_h), MakeRect(x, y, w, h));
+  SDL_Rect source;
+  source.y = al.y_offset;
+  source.h = al.frame_height;
+  source.w = al.frame_width;
+  if (!al.with_reverse) {
+    source.x = (frame % al.frames_count) * al.frame_width;
+  } else {
+    int frame_num = frame % (al.frames_count * 2 - 2);
+    if (frame_num >= al.frames_count) {
+      frame_num = al.frames_count - (frame_num - al.frames_count) - 2;
+    }
+    source.x = frame_num * al.frame_width;
+  }
+
+  if (w == 0 || h == 0) {
+    w = source.w;
+    h = source.h;
+  }
+
+  SDL_RenderCopy(GetRenderer(), texture, &source, MakeRect(x, y, w, h));
 }
 
+void DrawImageFromAtlas(const std::string& name,
+                        int x,
+                        int y,
+                        int w,
+                        int h,
+                        int atlas_x,
+                        int atlas_y,
+                        int atlas_w,
+                        int atlas_h) {
+  auto* texture = GetTexture(name);
+  SDL_RenderCopy(GetRenderer(), texture,
+                 MakeRect(atlas_x, atlas_y, atlas_w, atlas_h),
+                 MakeRect(x, y, w, h));
+}
 
 void FreeAllResources() {
   ResourceManager::GetInstance().FreeAllResources();

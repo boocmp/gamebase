@@ -35,6 +35,8 @@ set(SOURCES
    ${PROJECT_SOURCE_DIR}/main.cpp
    ${PROJECT_SOURCE_DIR}/app/baseapp.cpp
    ${PROJECT_SOURCE_DIR}/app/baseapp.h
+   ${PROJECT_SOURCE_DIR}/graphics/atlas.cpp
+   ${PROJECT_SOURCE_DIR}/graphics/atlas.h
    ${PROJECT_SOURCE_DIR}/graphics/graphics.cpp
    ${PROJECT_SOURCE_DIR}/graphics/graphics.h
 
