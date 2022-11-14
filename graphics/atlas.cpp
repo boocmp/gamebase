@@ -1,6 +1,7 @@
 #include "atlas.h"
 #include "graphics.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 

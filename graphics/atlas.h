@@ -34,7 +34,7 @@ class Atlas {
   const AnimationLine& GetAnimationLine(const std::string& name) const;
   void Bake();
 
-  Atlas::Atlas() = default;
+  Atlas() = default;
 
  private:
   explicit Atlas(const std::string& name);
