@@ -1,14 +1,16 @@
 #include <stdint.h>
 #include "app/baseapp.h"
+#include "ferma/ferma.h"
 
 class Ferma : public app::GameApp {
  public:
-  Ferma(int w, int h) : app::GameApp(w, h) {}
+  Ferma(int w, int h) : app::GameApp(w, h){}
 
  private:
   void Initialize() override {
     render::LoadResource("resources/images/egg.png", "egg"); 
     render::LoadResource("resources/images/backdrop.png", "backdrop");
+    render::LoadResource("resources/images/grass.png", "grass");
 
     auto duck_atlas = render::Atlas::Create("resources/images/duck.png", "duck");
     duck_atlas.AddAnimationLine("down").SetFramesCount(9, true).SetFrameHeight(83).SetFrameWidth(56);
@@ -20,50 +22,46 @@ class Ferma : public app::GameApp {
     duck_atlas.AddAnimationLine("up_right").SetFramesCount(9, true).SetFrameHeight(83).SetFrameWidth(56);
     duck_atlas.AddAnimationLine("up_left").SetFramesCount(9, true).SetFrameHeight(83).SetFrameWidth(56);
     render::BakeAtlas(duck_atlas);
+
+    auto grass_atlas = render::Atlas::Create("resources/images/grass.png", "grass");
+    grass_atlas.AddAnimationLine("g_1").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("g_2").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("g_3").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("g_4").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("g_5").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("g_6").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("g_7").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    render::BakeAtlas(grass_atlas);
+
   }
 
   void Render() override {
     render::DrawImage("backdrop", 1, 1, 800, 600);
+    //render::DrawImage("grass", 200, 1, 800, 100);
 
-    //int image = (left*down) + 2*(left*!up*!down) + 3*(right*down) + 4*(right*!up*!down) + 5*(up*!right*!left) + 6*(up*right) + 7*(up*left); 
-    //render::DrawImageFromAtlas("duck", x, y, 56, 83, ((frame % 27)/3)*56, image*83, 56, 83);
+    //duck.Create(x, y);
+    duck.Moving();
+    duck.Render();
 
-    const std::string animation = [&]() {
-      if (up && left) return "up_left";
-      if (up && right) return "up_right";
-      if (down && left) return "down_left";
-      if (down && right) return "down_right";
+    render::DrawImageFromAtlas("grass", "g_3", frame/4, 300, 300);
+    // grass.Render(0, 0);
+    // grass.Grow();
 
-      if (up) return "up";
-      if (down) return "down";
-      if (left) return "left";
-      if (right) return "right";
-
-      return "down";
-    }();
-
-    render::DrawImageFromAtlas("duck", animation, frame, x, y);
-    
-    right = 0;
-    left = 0;
-    up = 0;
-    down = 0;
   }
 
   void ProcessInput(const Uint8* keyboard, const MouseState& mouse) override {
-    // тут анализируем состояние клавиш клавиатуры
-    if (frame == 0){
-      x = mouse.x;
-      y = mouse.y;
-    }
-    if (keyboard[SDL_SCANCODE_LEFT])
-      {--x; left = 1;}
-    if (keyboard[SDL_SCANCODE_RIGHT])
-      {++x; right = 1;}
-    if (keyboard[SDL_SCANCODE_UP])
-      {--y; up = 1;}
-    if (keyboard[SDL_SCANCODE_DOWN])
-      {++y; down = 1;}
+    // if (frame == 0){
+    //   x = mouse.x;
+    //   y = mouse.y;
+    // }
+    // if (keyboard[SDL_SCANCODE_LEFT])
+    //   {--x; left = 1;}
+    // if (keyboard[SDL_SCANCODE_RIGHT])
+    //   {++x; right = 1;}
+    // if (keyboard[SDL_SCANCODE_UP])
+    //   {--y; up = 1;}
+    // if (keyboard[SDL_SCANCODE_DOWN])
+    //   {++y; down = 1;}
 
     if (left + right + up + down > 0) frame++;    
   }
@@ -74,25 +72,28 @@ class Ferma : public app::GameApp {
   // }
 
   void Update(Uint32 millis) override {
-    // тут обновляем логику которая зависит от времени
     const int kQuant = 30;
     millis_ += millis;
     if (millis_ < kQuant) {
       return;
     }
     millis_ -= kQuant;
-    // в параметре millis содержится количество миллисекунд с предыдущего вызова
   }
 
-  int x = 300;
-  int y = 300;
+  //int x = 300;
+  //int y = 300;
   int up = 0, down = 0, right = 0, left = 0;
   int frame = 0;
   Uint32 millis_ = 0;
+
+  Duck duck;
+  //duck.Create(x, y);
+  //Grass grass;
+  //std::string animation = "g_1";
 };
 
 #undef main
 int main() {
-  Ferma(800, 600).Run(); // 800 x 600 размер окна
+  Ferma(800, 600).Run();
   return 0;
 }
