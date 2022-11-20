@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "app/baseapp.h"
 #include "ferma/ferma.h"
+#include <string>
 
 class Ferma : public app::GameApp {
  public:
@@ -10,7 +11,7 @@ class Ferma : public app::GameApp {
   void Initialize() override {
     render::LoadResource("resources/images/egg.png", "egg"); 
     render::LoadResource("resources/images/backdrop.png", "backdrop");
-    render::LoadResource("resources/images/grass.png", "grass");
+    //render::LoadResource("resources/images/grass.png", "grass");
 
     auto duck_atlas = render::Atlas::Create("resources/images/duck.png", "duck");
     duck_atlas.AddAnimationLine("down").SetFramesCount(9, true).SetFrameHeight(83).SetFrameWidth(56);
@@ -24,36 +25,56 @@ class Ferma : public app::GameApp {
     render::BakeAtlas(duck_atlas);
 
     auto grass_atlas = render::Atlas::Create("resources/images/grass.png", "grass");
-    grass_atlas.AddAnimationLine("g_1").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
-    grass_atlas.AddAnimationLine("g_2").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
-    grass_atlas.AddAnimationLine("g_3").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
-    grass_atlas.AddAnimationLine("g_4").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
-    grass_atlas.AddAnimationLine("g_5").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
-    grass_atlas.AddAnimationLine("g_6").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
-    grass_atlas.AddAnimationLine("g_7").SetFramesCount(7, true).SetFrameHeight(150).SetFrameWidth(122);
+    grass_atlas.AddAnimationLine("grass").SetFramesCount(7, true).SetFrameHeight(60).SetFrameWidth(55);
     render::BakeAtlas(grass_atlas);
+
+    auto duck_eating_atlas = render::Atlas::Create("resources/images/duck_eating.png", "duck_eating");
+    duck_eating_atlas.AddAnimationLine("duck_eating").SetFramesCount(8, true).SetFrameHeight(84).SetFrameWidth(75);
+    render::BakeAtlas(duck_eating_atlas);
+
+    auto duck_die_atlas = render::Atlas::Create("resources/images/duck_die.png", "duck_die");
+    duck_die_atlas.AddAnimationLine("duck_die").SetFramesCount(8, true).SetFrameHeight(84).SetFrameWidth(75);
+    render::BakeAtlas(duck_die_atlas);
 
   }
 
   void Render() override {
     render::DrawImage("backdrop", 1, 1, 800, 600);
-    //render::DrawImage("grass", 200, 1, 800, 100);
 
-    //duck.Create(x, y);
-    duck.Moving();
-    duck.Render();
+    for (auto& grass: _grass){
+      grass->Render();
+      grass->Grow();
+    }
 
-    render::DrawImageFromAtlas("grass", "g_3", frame/4, 300, 300);
-    // grass.Render(0, 0);
-    // grass.Grow();
+    for (auto& food: food){
+      food->FindFood();
+    }
 
+    if (frame < 200) duck.Moving();
+    else duck.Eating();
+    // duck.Moving();
+    // duck.Render();
+    frame++;
+    //duck.Render();
   }
 
-  void ProcessInput(const Uint8* keyboard, const MouseState& mouse) override {
-    // if (frame == 0){
-    //   x = mouse.x;
-    //   y = mouse.y;
-    // }
+  void ProcessInput(const Uint8* keyboard, const MouseState& mouse) override { 
+    if ((mouse.buttons & SDL_BUTTON_LMASK) != 0) {
+      x = mouse.x;
+      y = mouse.y;
+      _grass.push_back(std::make_unique<Grass> (x, y));
+      _grass.push_back(std::make_unique<Grass> (x+30, y+30));
+      _grass.push_back(std::make_unique<Grass> (x+20, y));
+      _grass.push_back(std::make_unique<Grass> (x-30, y));
+      _grass.push_back(std::make_unique<Grass> (x, y+30));
+      food.push_back(std::make_unique<Duck> (x, y));
+      food.push_back(std::make_unique<Duck> (x+30, y+30));
+      food.push_back(std::make_unique<Duck> (x+20, y));
+      food.push_back(std::make_unique<Duck> (x-30, y));
+      food.push_back(std::make_unique<Duck> (x, y+30));
+  
+    }
+
     // if (keyboard[SDL_SCANCODE_LEFT])
     //   {--x; left = 1;}
     // if (keyboard[SDL_SCANCODE_RIGHT])
@@ -66,11 +87,6 @@ class Ferma : public app::GameApp {
     if (left + right + up + down > 0) frame++;    
   }
 
-
-  // void OnWindowResized(int widht, int height) override  { 
-  //   //тут запоминаем размеры окна и используем потом в Render 
-  // }
-
   void Update(Uint32 millis) override {
     const int kQuant = 30;
     millis_ += millis;
@@ -80,16 +96,17 @@ class Ferma : public app::GameApp {
     millis_ -= kQuant;
   }
 
-  //int x = 300;
-  //int y = 300;
+  int x = 0, y = 0;
+  Uint32 buttons;
   int up = 0, down = 0, right = 0, left = 0;
   int frame = 0;
   Uint32 millis_ = 0;
 
-  Duck duck;
-  //duck.Create(x, y);
-  //Grass grass;
-  //std::string animation = "g_1";
+
+  Duck duck{300, 300};
+  Grass grass{x, y};
+  std::vector<std::unique_ptr<Grass>> _grass;
+  std::vector<std::unique_ptr<Duck>> food;
 };
 
 #undef main

@@ -4,7 +4,7 @@
 
 #include <functional>
 #include <memory>
-#include <vector> 
+#include <vector>
 
 // class State{
 //     public:
@@ -14,78 +14,42 @@
 // };
 
 // class StateMachine{
-//     public:
-//     State CurrentState;
-
-//     void Initialize(State startState){
-//         CurrentState = startState;
-//         CurrentState.Enter();
-//     }
-
-//     void ChangeState (State newState){
-//         CurrentState.Exit();
-//         CurrentState = newState;
-//         CurrentState.Enter();
+//     void SetDicision(Uint32 millis){
+//         if (millis == 100) return;
 //     }
 // };
-
-// class MovingState: public State{
-//     public:
-//     void Enter() override {
-//         base.Enter();
-//     }
-
-//     void Exit() override {
-//         base.Exit();
-//     }
-
-//     void Update() override {
-//         base.Update();
-//     }
-// };
-
-class Grass {
-    public:
-    void Render(int x, int y){
-        render::DrawImageFromAtlas("grass", animation, frame/4, x, y);
-    }
-    void Grow(){
-        if (animation == "g_1") animation = "g_2";
-        else if (animation == "g_2") animation = "g_3";
-        else if (animation == "g_3") animation = "g_4";
-        else if (animation == "g_4") animation = "g_5";
-        else if (animation == "g_5") animation = "g_6";
-        else if (animation == "g_6") animation = "g_7";
-        frame++;
-    }
-    private:
-    std::string animation = "g_1";
-    int frame = 0;
-};
 
 class Animal {
     public:
-    enum States {_Moving, FindingGrass, Eating, Dying};
-    private: States _state;
+    enum States {_Moving, Find_Grass, _Eating, Die};
+    States _state;
     public:
-    void ChangeState(States newState){
+    virtual void ChangeState(States newState){
         _state = newState;
     }
     virtual ~Animal(){};
     virtual void Render() = 0;
     virtual void Moving() = 0;
-    //virtual void Create(int _x, int _y) = 0;
+    virtual int FindFood() = 0;
+    virtual int GoingToFood() = 0;
+    virtual void Eating() = 0;
+    virtual void Died() = 0;
+    //virtual void Update(Uint32 millis) = 0;
 };
 
 class Duck: public Animal {
     private:
     int move_frame = 0;
+    int eating_frame = 0;
+    int die_frame = 0;
     public:
-    // void Create(int _x, int _y) override {
-    //     x = _x;
-    //     y = _y;
-    // }
+    Duck (int x, int y){
+        this->x = x;
+        this->y = y;
+    }
+
     void Moving() override {
+        render::DrawImageFromAtlas("duck", animation, move_frame/4, x, y);
         move_frame++;
         if (x < 200 || x > 600 || y < 150 || y > 400) {
         switch (direction)
@@ -177,11 +141,95 @@ class Duck: public Animal {
         // }();
         //if (left + right + up + down > 0) move_frame++;
     }
+    
+    int FindFood(){
+        if ((this->x - x)*(this->x - x) + (this->y - y)*(this->y - y) < d_x*d_x + d_y*d_y) {
+            d_x = this->x - x;
+            d_y = this->y - y;
+        }
+        if (d_x == 1000 && d_y == 1000) return 0;
+        return 1;
+        delta = abs(d_x/d_y);
+    }
+
+    int GoingToFood(){
+        if (d_y > 0 && d_x > 0) { y++;   x += delta;   d_y--;   d_x -= delta;}
+        else if (d_y > 0 && d_x < 0) { y++;   x -= delta;   d_y--;   d_x += delta;}
+        else if (d_y < 0 && d_x > 0) { y--;   x += delta;   d_y++;   d_x -= delta;}
+        else if (d_y < 0 && d_x < 0) { y--;   x -= delta;   d_y++;   d_x += delta;}
+
+        if (d_x > 0) render::DrawImageFromAtlas("duck", "right", move_frame/4, x, y);
+        else if (d_x < 0) render::DrawImageFromAtlas("duck", "left", move_frame/4, x, y);
+
+        if (move_frame != 35) move_frame++;
+        else move_frame = 0;
+
+        if (d_x == 0 && d_y == 0) return 1;
+        return 0;
+    }
+    
+    void Eating(){
+        render::DrawImageFromAtlas("duck_eating", "duck_eating", eating_frame/8, x, y);
+        if (eating_frame != 63) eating_frame++;
+        else eating_frame = 0;
+    }
+
+    void Died(){
+        render::DrawImageFromAtlas("duck_die", "duck_die", die_frame/8, x, y);
+        if (die_frame != 53) die_frame++;
+        die_frame = 0;
+    }
+
+    // void Update(Uint32 millis){
+    //     t += millis;
+    //     if (t > 200){  // For example, 200
+    //         Died();
+    //         return;
+    //     }
+    //     if (t < 100) {  // For example, 100
+    //         Moving();
+    //         return;
+    //     }
+    //     if (FindFood()) {
+    //         if (GoingToFood()) {
+    //             Eating();
+    //             t -= 10;   // For example, 10
+    //         }
+    //     else Moving;
+    // }
+
     void Render() override {
         render::DrawImageFromAtlas("duck", animation, move_frame/4, x, y);
     }
+    
     private:
     std::string animation = "up_left";
-    int x = 300, y = 300;
+    int x, y;
+    int f_x = x, f_y = y;
+    int d_x = 1000, d_y = 1000;
     int direction = 0;
+    int delta;
+    Uint32 t = 0;
+};
+
+class Grass {
+    public:
+    Grass (int x, int y){
+        this->x = x;
+        this->y = y;
+    }
+    void Render(){
+        render::DrawImageFromAtlas("grass", "grass", frame/4, x, y);
+    //     render::DrawImageFromAtlas("grass", "grass", frame/4, x+30, y+30);
+    //     render::DrawImageFromAtlas("grass", "grass", frame/4, x+20, y);
+    //     render::DrawImageFromAtlas("grass", "grass", frame/4, x-30, y);
+    //     render::DrawImageFromAtlas("grass", "grass", frame/4, x, y+30);
+    }
+    void Grow(){
+        if (frame == 23) return;
+        frame++;
+    }
+    private:
+    int x, y;
+    int frame = 0;
 };
