@@ -31,16 +31,16 @@ Atlas Atlas::Create(const std::filesystem::path& path,
 Atlas::Atlas(const std::string& name) : name_(name) {}
 
 Atlas::AnimationLine& Atlas::AddAnimationLine(const std::string& name) {
-  try {
-    GetAnimationLine(name);
-  } catch (std::invalid_argument&) {
-    AnimationLine al;
-    al.name = name;
-    animation_lines_.push_back(std::move(al));
-    return animation_lines_.back();
+  auto fnd = std::find_if(animation_lines_.begin(), animation_lines_.end(),
+                          [&name](const auto& al) { return al.name == name; });
+  if (fnd != animation_lines_.end()) {
+    throw std::invalid_argument(name + " animation line already exists in " +
+                                name_ + " atlas");
   }
-  throw std::invalid_argument(name + " animation line already exists in " +
-                              name_ + " atlas");
+  AnimationLine al;
+  al.name = name;
+  animation_lines_.push_back(std::move(al));
+  return animation_lines_.back();
 }
 
 const std::string& Atlas::GetName() const {
