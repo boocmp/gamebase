@@ -237,7 +237,7 @@ class Duck: public Animal {
         if (move_frame != 35) move_frame++;
         else move_frame = 0;
 
-        if (abs(d_x) < cos * 3 && abs(d_y) < sin * 3) return 0;
+        if (abs(d_x) <= cos * 3 || abs(d_y) <= sin * 3) return 0;
         return 1;
     }
     
@@ -245,7 +245,7 @@ class Duck: public Animal {
         if (!food)
           return 0;
         render::DrawImageFromAtlas("duck_eating", "duck_eating", eating_frame/8, (int)x, (int)y);
-        if (eating_frame != 100) eating_frame++;
+        if (eating_frame != 63) eating_frame++;
         else {
             eating_frame = 0;
             food->Eat(3);
@@ -260,24 +260,37 @@ class Duck: public Animal {
     void Died(){
         render::DrawImageFromAtlas("duck_die", "duck_die", die_frame/8, (int)x, (int)y);
         if (die_frame != 53) die_frame++;
-        die_frame = 0;
+        else return;
     }
 
     void Update(Uint32 millis, const std::vector<std::unique_ptr<Grass>>& grass){
         t += millis;
         
-        if (t < 1000) {  // For example, 100
+        if (t > 5000) {
+            Died();
+            return;
+        }
+        if (t < 2000) {  // For example, 100
+            s = 1;
+            food = nullptr;
             Moving();
             return;
         }
-        if (Grass* food = FindFood(grass)) {
-          if (GoingToFood()) {
-            Eating(food);
-            t -= 10;  // For example, 10
-          } else
-            Moving();
-        } else
-          Moving();
+        if (!food) food = FindFood(grass);
+        else if (food) {
+            if (s == 1) s = GoingToFood();
+            else {
+                Eating(food);
+                _t++;
+                if (_t == 60) {
+                    t -= millis*100;
+                    _t = 0;
+                }
+            }
+            return;
+        }
+        Moving();
+        
     }
 
     void Render() override {
@@ -291,4 +304,6 @@ class Duck: public Animal {
     float d_x = 1000, d_y = 1000;
     int direction = 0;
     Uint32 t = 0;
+    Grass* food = nullptr;
+    int s = 1, _t = 0;
 };
