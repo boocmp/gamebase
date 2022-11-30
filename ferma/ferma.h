@@ -6,6 +6,62 @@
 #include <memory>
 #include <vector>
 
+using MouseState = app::GameApp::MouseState;
+
+class ClickArea{
+    public:
+    ClickArea(int x, int y, int w, int h){
+        this->x = x;
+        this->y = y;
+        this->w = w;
+        this->h = h;
+    }
+
+    void ChangeXY(int x, int y){
+        this->x = x;
+        this->y = y;
+    }
+
+    bool Process(const MouseState& mouse){
+        _x = (float)mouse.x;
+        _y = (float)mouse.y;
+        bool _click = false;
+        if ((mouse.buttons & SDL_BUTTON_LMASK) != 0) {
+            click = true;
+        }
+        else if (click) {
+            _click = true;
+            click = false;
+        }
+        if (_x >= x && _x <=x+w && _y >= y && _y<= y+h && _click){
+            return true;
+        }
+        return false;
+    }
+    private:
+    bool click = false;
+    int x, y, w, h;
+    int _x, _y;
+};
+
+class Goals{
+    public:
+    void Render(){
+        render::DrawImageFromAtlas("money", "money", count, 710, 40);
+        render::DrawImage("slash", 723, 50, 15, 15);
+        render::DrawImageFromAtlas("money", "money", final_count, 736, 40);
+    }
+    void AchiveGoal(){
+        count++;
+    } 
+    bool IsAchived(){
+        return count == final_count;
+    }
+    private:
+    int count = 0;
+    int final_count = 4;
+};
+
 class Shop{
     public:
     Shop(int money){
@@ -33,7 +89,7 @@ class Bank{
         int _money = money;
         int i = 0;
         while (_money > 0){
-            render::DrawImageFromAtlas("money", "money", _money % 10, 660 - 15*i, 520);
+            render::DrawImageFromAtlas("money", "money", _money % 10, 662 - 15*i, 525);
             i++;
             _money /= 10;
         }
@@ -120,6 +176,9 @@ class Store{
                 _x++;
             } else _y++;
         }
+    }
+    int GetCount(){
+        return count;
     }
     private:
     int count = 0;
@@ -254,7 +313,7 @@ class Duck: public Animal {
     void Moving() override {
         render::DrawImageFromAtlas("duck", animation, move_frame/4, (int)x, (int)y);
         move_frame++;
-        if (x < 200 || x > 600 || y < 150 || y > 400) {
+        if (x < 170 || x > 630 || y < 150 || y > 400) {
         switch (direction)
         {
         case 0:
@@ -394,6 +453,10 @@ class Duck: public Animal {
 
     bool IsEggTime(){
         return egg_time == 500;
+    }
+
+    bool IsDied(){
+        return t > 1100;
     }
 
     void Update(const std::vector<std::unique_ptr<Grass>>& grass){

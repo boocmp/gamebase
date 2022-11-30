@@ -15,6 +15,7 @@ class Ferma : public app::GameApp {
 
     render::LoadResource("resources/images/19.png", "19");
     render::LoadResource("resources/images/shop_duck.png", "shop_duck");
+    render::LoadResource("resources/images/slash.png", "slash");
 
     auto duck_atlas = render::Atlas::Create("resources/images/duck.png", "duck");
     duck_atlas.AddAnimationLine("down").SetFramesCount(9, true).SetFrameHeight(83).SetFrameWidth(56);
@@ -52,7 +53,7 @@ class Ferma : public app::GameApp {
     render::BakeAtlas(sump_atlas);
     
     auto money_atlas = render::Atlas::Create("resources/images/money.png", "money");
-    money_atlas.AddAnimationLine("money").SetFramesCount(10, true).SetFrameHeight(40).SetFrameWidth(22);
+    money_atlas.AddAnimationLine("money").SetFramesCount(10, true).SetFrameHeight(32).SetFrameWidth(18);
     render::BakeAtlas(money_atlas);
   }
 
@@ -65,12 +66,10 @@ class Ferma : public app::GameApp {
     render::DrawImageFromAtlas("time", "time", sec2, 708, 14);
     render::DrawImageFromAtlas("time", "time", sec1, 718, 14);
 
-    // render::DrawImageFromAtlas("money", "money", 0, 635, 520);
-    // render::DrawImageFromAtlas("money", "money", 1, 650, 520);
-
     bank.Render();
     shop.Render();
     stump.Render();
+    goals.Render();
 
 
     for (auto& grass: _grass){
@@ -108,65 +107,41 @@ class Ferma : public app::GameApp {
 
     if (abs(x - 434) < 110 && abs(y - 100) < 40) stump.ChangeState();
 
-    if ((mouse.buttons & SDL_BUTTON_LMASK) != 0) {
-      
-      if (click > 0) {
-        click--;
-        return;
-      }
+    if (click1.Process(mouse)){
+      shop.MinusDuck();
+      bank.WasteMoney(100);
+      ducks.push_back(std::make_unique<Duck> (300, 400));
+    }
 
-      if (abs(x - 28) < 13 && abs(y - 50) < 30 && shop.IsDuck()){
-        shop.MinusDuck();
-        bank.WasteMoney(100);
-        ducks.push_back(std::make_unique<Duck> (300, 350));
-        click = 6;
-      }
-
-
-      if (abs(x - 434) < 110 && abs(y - 100) < 40 && bank.GetMoney() >= 19) {
-        if (!stump.IsWorking() && !stump.IsFull())bank.WasteMoney(19);
+    if (click2.Process(mouse)){
+      if (!stump.IsWorking() && !stump.IsFull() && bank.GetMoney() > 19) {
+        bank.WasteMoney(19);
         stump.Water();
       }
+    }
 
-      for (auto& egg: eggs){
-        float _x = egg->GetX(), _y = egg->GetY();
-        if (abs(_x - x) < 20 && abs(_y - y) < 20){
-          egg->Taken(true);
-          egg_is_taken = 6;
-          store.Add();
-        }
+    for (auto& egg: eggs){
+      float _x = egg->GetX(), _y = egg->GetY();
+      click3.ChangeXY((int)_x, (int)_y);
+      if (click3.Process(mouse)){
+        egg->Taken(true);
+        store.Add();
+        goals.AchiveGoal();
       }
-      auto ne = std::remove_if(eggs.begin(), eggs.end(),
-                               [](auto& g) { return g->IsTaken(); });
-      eggs.erase(ne, eggs.end());
+    }
+    auto ne = std::remove_if(eggs.begin(), eggs.end(),
+                            [](auto& g) { return g->IsTaken(); });
+    eggs.erase(ne, eggs.end());
 
-      if (egg_is_taken > 0) {
-        egg_is_taken--;
-        return;
+    if (stump.GetWaterCount()){
+      if (click4.Process(mouse)) {
+        _grass.push_back(std::make_unique<Grass> (x, y));
+        _grass.push_back(std::make_unique<Grass> (x+30, y+30));
+        _grass.push_back(std::make_unique<Grass> (x+20, y));
+        _grass.push_back(std::make_unique<Grass> (x-30, y));
+        _grass.push_back(std::make_unique<Grass> (x, y+30));
+        stump.TakeWater();
       }
-
-      if (stump.GetWaterCount()){
-        int flag1 = 0, flag2 = 0, flag3 = 0, flag4 = 0, flag5 = 0;
-        int flag = 0;
-        for (auto& grass: _grass){
-          float _x = grass->GetX(), _y = grass->GetY();
-          if (_x == x && _y == y) flag1 = 1;
-          if (_x == x+30 && _y == y+30) flag2 = 1;
-          if (_x == x+20 && _y == y) flag3 = 1;
-          if (_x == x-30 && _y == y) flag4 = 1;
-          if (_x == x && _y == y+30) flag5 = 1;
-        }
-        if (x < 230 || x > 570 || y < 180 || y > 370) flag = 1;
-        if (flag!= 1 && flag1!= 1 && flag2!= 1  && flag3!= 1 && flag4!= 1 && flag5!= 1) {
-          _grass.push_back(std::make_unique<Grass> (x, y));
-          _grass.push_back(std::make_unique<Grass> (x+30, y+30));
-          _grass.push_back(std::make_unique<Grass> (x+20, y));
-          _grass.push_back(std::make_unique<Grass> (x-30, y));
-          _grass.push_back(std::make_unique<Grass> (x, y+30));
-          stump.TakeWater();
-        }
-      }
-  
     }
 
     // if (keyboard[SDL_SCANCODE_LEFT])
@@ -178,7 +153,6 @@ class Ferma : public app::GameApp {
     // if (keyboard[SDL_SCANCODE_DOWN])
     //   {++y; down = 1;}
 
-    if (left + right + up + down > 0) frame++;    
   }
 
   void Update(Uint32 millis) override {
@@ -207,32 +181,33 @@ class Ferma : public app::GameApp {
         eggs.push_back(std::make_unique<Egg> (duck->GetX()+15, duck->GetY()+40));
       }
     }
+    auto ne = std::remove_if(ducks.begin(), ducks.end(),
+                                [](auto& d) { return d->IsDied(); });
+    ducks.erase(ne, ducks.end());
   }
 
   float x = 0, y = 0;
   Uint32 buttons;
-  int up = 0, down = 0, right = 0, left = 0;
-  int frame = 0;
   Uint32 millis_ = 0;
   int sec1 = 0, sec2 = 0, min = 0;
-  int f = 1;
   int _time = 0;
-  int stump_frame = 6;
 
-  int egg_is_taken = 0;
-  int click = 0;
-
-
-  //Duck duck{300, 300};
   Grass grass{x, y};
   Store store;
   Stump stump;
   Bank bank{245};
   Shop shop{245};
-  //Time time;
+  Goals goals;
+
   std::vector<std::unique_ptr<Grass>> _grass;
   std::vector<std::unique_ptr<Egg>> eggs;
   std::vector<std::unique_ptr<Duck>> ducks;
+  
+  ClickArea click1{8, 23, 45, 57};
+  ClickArea click2{324, 42, 135, 120};
+  ClickArea click3{0, 0, 24, 30};
+  ClickArea click4{170, 170, 350, 200};
+
 };
 
 #undef main
