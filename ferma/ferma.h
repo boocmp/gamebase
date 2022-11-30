@@ -6,6 +6,161 @@
 #include <memory>
 #include <vector>
 
+class Shop{
+    public:
+    Shop(int money){
+        this->money = money;
+    }
+    void Render(){
+        if (money >= 100) render::DrawImage("shop_duck", 8, 23, 45, 57);
+    }
+    int IsDuck(){
+        return money >= 100;
+    }
+    void MinusDuck(){
+        money -= 100;
+    }
+    private:
+    int money;
+};
+
+class Bank{
+    public:
+    Bank(int money){
+        this->money = money;
+    }
+    void Render(){
+        int _money = money;
+        int i = 0;
+        while (_money > 0){
+            render::DrawImageFromAtlas("money", "money", _money % 10, 660 - 15*i, 520);
+            i++;
+            _money /= 10;
+        }
+    }
+    
+    int GetMoney(){
+        return money;
+    }
+
+    void WasteMoney(int _money){
+        money -= _money;
+    }
+    private:
+    int money;
+};
+
+class Stump{
+    public:
+    void Render(){
+        render::DrawImageFromAtlas("sump", "sump", stump_frame/6, 324, 42);
+        for (int i = 0; i < level_count; i++){
+            render::DrawImage("level", 462, 122 - 13*i, 11, 11);
+        }
+        if (water_count == 0 && state == 0) render::DrawImage("19", 440, 40, 57, 30);
+        if (stump_frame == 0) stump_frame = 6;
+        if (state == 1){
+            stump_frame++;
+            if (stump_frame > 47) {
+                work_count--;
+                level_count++;
+                stump_frame = 7;
+            }
+            if (work_count == 0) {
+                state = 0;
+                stump_frame = 6;
+                work_count = 5;
+                water_count = 5;
+            }
+        }
+    }
+    
+    int IsWorking(){
+        return state;
+    }
+
+    int IsFull(){
+        return !!water_count;
+    }
+
+    void ChangeState(){
+        if (stump_frame == 6) stump_frame = 0;
+    }
+    void Water(){
+        if (water_count == 0) state = 1;
+    }
+
+    int GetWaterCount(){
+        return water_count;
+    }
+
+    void TakeWater(){
+        water_count--;
+        level_count--;
+    }
+
+    private:
+    int stump_frame = 6;
+    int work_count = 5;
+    int state = 0;
+    int water_count = 5, level_count = 5;
+};
+
+class Store{
+    public:
+    void Add() {count += 3;}
+    void Render(){
+        int _count = count;
+        int _x = 0, _y = 0;
+        while (_count > 0){
+            _count--;
+            render::DrawImage("_egg", 350 + 12*_x, 540 - 13*_y, 12, 13);
+            if (_y >= 4) {
+                _y = 0;
+                _x++;
+            } else _y++;
+        }
+    }
+    private:
+    int count = 0;
+};
+
+class Egg{
+    public:
+    Egg (float x, float y){
+        this->x = x;
+        this->y = y;
+    }
+    void Render(){
+        if (time < 450 || time/4 % 2 == 0) render::DrawImageFromAtlas("egg", "egg", state, (int)x, (int)y);
+        else  render::DrawImageFromAtlas("egg", "egg", 2, (int)x, (int)y);
+        state = 0;
+        time++;
+    }
+    void ChangeState(){
+        state = 1;
+    }
+
+    void Taken(bool is_taken){
+        this->is_taken = is_taken;
+    }
+
+    bool IsTaken(){
+        return is_taken;
+    }
+
+    bool IsTimeOver(){
+        return time >= 500;
+    }
+
+    float GetX() {return x;}
+    float GetY() {return y;}
+    private:
+    float x, y;
+    int state = 0;
+    bool is_taken = false;
+    int time = 0;
+};
 
 class Food {
     public:
@@ -18,11 +173,15 @@ class Food {
             mass-=p;
             return p;
         } else {
-            int r = mass;
             mass = 0;
-            return r;
+            return 0;
         }
     }
+
+    int GetMass(){
+        return mass;
+    }
+
     int Grow(int p){
         mass+=p;
     }
@@ -35,7 +194,7 @@ class Food {
 
 class Grass : public Food{
     public:
-    Grass (int x, int y) : Food(10) {
+    Grass (float x, float y) : Food(6) {
         this->x = x;
         this->y = y;
     }
@@ -47,33 +206,27 @@ class Grass : public Food{
         grass[i+1] = y;
     }
 
+    void Less(){
+        frame = 12;
+    }
 
     void Render(){
         render::DrawImageFromAtlas("grass", "grass", frame/4, (int)x, (int)y);
-    }
-
-    void Grow(){
         if (frame == 23) return;
         frame++;
     }
 
-    int GetX () const{return x;}
-    int GetY () const{return y;}
+    float GetX () const{return x;}
+    float GetY () const{return y;}
 
     private:
-    int x, y;
+    float x, y;
     int frame = 0;
     int grass[30] = {0};
 };
 
 class Animal {
     public:
-    enum States {_Moving, Find_Grass, _Eating, Die};
-    States _state;
-    public:
-    virtual void ChangeState(States newState){
-        _state = newState;
-    }
     virtual ~Animal(){};
     virtual void Render() = 0;
     virtual void Moving() = 0;
@@ -81,10 +234,10 @@ class Animal {
     virtual int GoingToFood() = 0;
     virtual int Eating(Grass* food) = 0;
     virtual void Died() = 0;
-    virtual void Update(Uint32 millis, const std::vector<std::unique_ptr<Grass>>& grass) = 0;
+    virtual void Update(const std::vector<std::unique_ptr<Grass>>& grass) = 0;
 
-    virtual int GetX() = 0;
-    virtual int GetY() = 0;
+    virtual float GetX() = 0;
+    virtual float GetY() = 0;
 };
 
 class Duck: public Animal {
@@ -176,24 +329,10 @@ class Duck: public Animal {
             animation = "right";
             break;
         }
-        // animation = [&]() {
-        //     if (up && left) return "up_left";
-        //     if (up && right) return "up_right";
-        //     if (down && left) return "down_left";
-        //     if (down && right) return "down_right";
-
-        //     if (up) return "up";
-        //     if (down) return "down";
-        //     if (left) return "left";
-        //     if (right) return "right";
-
-        //     return "down";
-        // }();
-        //if (left + right + up + down > 0) move_frame++;
     }
     
     Grass* FindFood(const std::vector<std::unique_ptr<Grass>>& grass){
-        int dis = 100000000;
+        float dis = 100000000;
 
         Grass* closest_food = nullptr;
         for (auto& g: grass){
@@ -207,17 +346,8 @@ class Duck: public Animal {
             dis = d_x*d_x + d_y*d_y;
         }
 
-        // for (int i = 0; i < 40; i += 2){
-        //     if (food[i] == 0) continue;
-        //     if ((x - grass[i]->GetX())*(x - food[i]) + (y - food[i+1])*(y - food[i+1]) < dis){
-        //         d_x = food[i] - x;
-        //         d_y = food[i+1] - y;
-        //         _x = food[i];
-        //         _y = food[i+1];
-        //     }
-        //     dis = d_x*d_x + d_y*d_y;
-        // }
-
+        d_x += 5;
+        d_y -= 20;
         if (dis == 100000000) return nullptr;
         dis = sqrt(dis);
         sin = abs(d_y/dis);
@@ -248,14 +378,13 @@ class Duck: public Animal {
         if (eating_frame != 63) eating_frame++;
         else {
             eating_frame = 0;
-            food->Eat(3);
-            return 1;
+            return !food->Eat(3);
         }
         return 0;
     }
 
-    int GetX() {return _x;}
-    int GetY() {return _y;}
+    float GetX() {return x;}
+    float GetY() {return y;}
 
     void Died(){
         render::DrawImageFromAtlas("duck_die", "duck_die", die_frame/8, (int)x, (int)y);
@@ -263,27 +392,37 @@ class Duck: public Animal {
         else return;
     }
 
-    void Update(Uint32 millis, const std::vector<std::unique_ptr<Grass>>& grass){
-        t += millis;
+    bool IsEggTime(){
+        return egg_time == 500;
+    }
+
+    void Update(const std::vector<std::unique_ptr<Grass>>& grass){
+        t ++;
+        egg_time++;
+        if (egg_time == 501) egg_time = 0;
         
-        if (t > 5000) {
+        if (t > 1000) {
             Died();
             return;
         }
-        if (t < 2000) {  // For example, 100
+        if (t < 500) {  // For example
             s = 1;
             food = nullptr;
             Moving();
             return;
         }
-        if (!food) food = FindFood(grass);
+        if (!food || _s) {
+            food = FindFood(grass);
+            _s = 0;
+            s = 1;
+        }
         else if (food) {
             if (s == 1) s = GoingToFood();
             else {
-                Eating(food);
+                _s = Eating(food);
                 _t++;
-                if (_t == 60) {
-                    t -= millis*100;
+                if (_t == 200) {
+                    t -= 400;
                     _t = 0;
                 }
             }
@@ -303,7 +442,7 @@ class Duck: public Animal {
     float sin, cos;
     float d_x = 1000, d_y = 1000;
     int direction = 0;
-    Uint32 t = 0;
+    int t = 0, egg_time = 0;
     Grass* food = nullptr;
-    int s = 1, _t = 0;
+    int s = 1, _t = 0, _s = 0;
 };
